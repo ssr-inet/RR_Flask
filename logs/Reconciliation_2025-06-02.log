@@ -1,0 +1,348 @@
+2025-06-02 18:42:11,492 - INFO - --------------------------------------------
+2025-06-02 18:42:11,492 - INFO - Entered Main Function...
+2025-06-02 18:42:13,598 - ERROR - Error in main(): 'DATE'
+2025-06-02 18:42:14,075 - INFO - Report generated for Pan_UTI
+2025-06-02 18:47:19,980 - INFO - --------------------------------------------
+2025-06-02 18:47:19,981 - INFO - Entered Main Function...
+2025-06-02 18:47:20,526 - ERROR - Error in main(): 'DATE'
+2025-06-02 18:47:20,527 - INFO - Result sent as API
+2025-06-02 18:47:20,527 - INFO - ----------------------------------
+2025-06-02 18:47:37,981 - INFO - --------------------------------------------
+2025-06-02 18:47:37,982 - INFO - Entered Main Function...
+2025-06-02 18:47:38,155 - ERROR - Error in main(): 'DATE'
+2025-06-02 18:47:38,155 - INFO - Result sent as API
+2025-06-02 18:47:38,155 - INFO - ----------------------------------
+2025-06-02 18:52:25,094 - INFO - --------------------------------------------
+2025-06-02 18:52:25,094 - INFO - Entered Main Function...
+2025-06-02 18:52:25,094 - ERROR - Error in main(): cannot access local variable 'df_excel' where it is not associated with a value
+2025-06-02 18:52:25,094 - INFO - Result sent as API
+2025-06-02 18:52:25,094 - INFO - ----------------------------------
+2025-06-02 18:53:15,064 - INFO - --------------------------------------------
+2025-06-02 18:53:15,065 - INFO - Entered Main Function...
+2025-06-02 18:53:16,234 - INFO - Records found within the date range. Running reconciliation...
+2025-06-02 18:53:16,234 - INFO - Entering Reconciliation for Pan_UTI Service
+2025-06-02 18:53:16,237 - ERROR - Error in main(): Panuti_service() missing 1 required positional argument: 'service_name'
+2025-06-02 18:53:16,238 - INFO - Result sent as API
+2025-06-02 18:53:16,238 - INFO - ----------------------------------
+2025-06-02 18:54:00,597 - INFO - --------------------------------------------
+2025-06-02 18:54:00,617 - INFO - Entered Main Function...
+2025-06-02 18:54:01,339 - INFO - Records found within the date range. Running reconciliation...
+2025-06-02 18:54:01,339 - INFO - Entering Reconciliation for Pan_UTI Service
+2025-06-02 18:54:01,341 - INFO - Fetching data from HUB for Pan_UTI
+2025-06-02 18:54:01,342 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 18:54:01,625 - ERROR - Error during SQL execution: (pymysql.err.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '2025-05-27'' at line 24")
+[SQL: 
+        SELECT 
+    ut.ApplicationNumber AS VENDOR_REFERENCE,
+    tu.UserName as IHUB_USERNAME,
+    ut.UTITSLTransID_Gateway AS UTITSLTrans_id,
+    mt.TransactionRefNum AS IHUB_REFERENCE,
+    mt.tenantDetailID as TENANT_ID,
+    mt.TransactionStatus AS IHUB_MASTER_STATUS,
+    ut.CreationTs as SERVICE_DATE,
+    ut.TransactionStatusType AS service_status,
+    CASE 
+        WHEN a.IHubReferenceId IS NOT NULL THEN 'Yes'
+        ELSE 'No'
+    END AS IHUB_LEDGER_STATUS
+    FROM ihubcore.UTIITSLTTransaction ut
+    LEFT JOIN ihubcore.MasterSubTransaction mst ON mst.Id = ut.MasterSubTransactionId
+    LEFT JOIN ihubcore.MasterTransaction mt ON mt.Id = mst.MasterTransactionId
+    LEFT JOIN tenantinetcsc.EboDetail ed ON ed.Id = mt.EboDetailId
+    LEFT JOIN tenantinetcsc.`User` tu ON tu.Id = ed.UserId
+    LEFT JOIN (
+        SELECT DISTINCT iwt.IHubReferenceId  
+        FROM ihubcore.IHubWalletTransaction iwt  
+        WHERE DATE(iwt.creationTs) BETWEEN %(start_date)s AND CURRENT_DATE()
+    ) a ON a.IHubReferenceId = mt.TransactionRefNum
+    WHERE DATE(ut.CreationTs) BETWEEN %(start_date)s' and %(end_date)s
+            ]
+[parameters: {'start_date': datetime.date(2025, 5, 16), 'end_date': datetime.date(2025, 5, 27)}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-06-02 18:54:02,630 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 18:54:02,638 - ERROR - Error during SQL execution: (pymysql.err.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '2025-05-27'' at line 24")
+[SQL: 
+        SELECT 
+    ut.ApplicationNumber AS VENDOR_REFERENCE,
+    tu.UserName as IHUB_USERNAME,
+    ut.UTITSLTransID_Gateway AS UTITSLTrans_id,
+    mt.TransactionRefNum AS IHUB_REFERENCE,
+    mt.tenantDetailID as TENANT_ID,
+    mt.TransactionStatus AS IHUB_MASTER_STATUS,
+    ut.CreationTs as SERVICE_DATE,
+    ut.TransactionStatusType AS service_status,
+    CASE 
+        WHEN a.IHubReferenceId IS NOT NULL THEN 'Yes'
+        ELSE 'No'
+    END AS IHUB_LEDGER_STATUS
+    FROM ihubcore.UTIITSLTTransaction ut
+    LEFT JOIN ihubcore.MasterSubTransaction mst ON mst.Id = ut.MasterSubTransactionId
+    LEFT JOIN ihubcore.MasterTransaction mt ON mt.Id = mst.MasterTransactionId
+    LEFT JOIN tenantinetcsc.EboDetail ed ON ed.Id = mt.EboDetailId
+    LEFT JOIN tenantinetcsc.`User` tu ON tu.Id = ed.UserId
+    LEFT JOIN (
+        SELECT DISTINCT iwt.IHubReferenceId  
+        FROM ihubcore.IHubWalletTransaction iwt  
+        WHERE DATE(iwt.creationTs) BETWEEN %(start_date)s AND CURRENT_DATE()
+    ) a ON a.IHubReferenceId = mt.TransactionRefNum
+    WHERE DATE(ut.CreationTs) BETWEEN %(start_date)s' and %(end_date)s
+            ]
+[parameters: {'start_date': datetime.date(2025, 5, 16), 'end_date': datetime.date(2025, 5, 27)}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-06-02 18:54:04,644 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 18:54:04,654 - ERROR - Error during SQL execution: (pymysql.err.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '2025-05-27'' at line 24")
+[SQL: 
+        SELECT 
+    ut.ApplicationNumber AS VENDOR_REFERENCE,
+    tu.UserName as IHUB_USERNAME,
+    ut.UTITSLTransID_Gateway AS UTITSLTrans_id,
+    mt.TransactionRefNum AS IHUB_REFERENCE,
+    mt.tenantDetailID as TENANT_ID,
+    mt.TransactionStatus AS IHUB_MASTER_STATUS,
+    ut.CreationTs as SERVICE_DATE,
+    ut.TransactionStatusType AS service_status,
+    CASE 
+        WHEN a.IHubReferenceId IS NOT NULL THEN 'Yes'
+        ELSE 'No'
+    END AS IHUB_LEDGER_STATUS
+    FROM ihubcore.UTIITSLTTransaction ut
+    LEFT JOIN ihubcore.MasterSubTransaction mst ON mst.Id = ut.MasterSubTransactionId
+    LEFT JOIN ihubcore.MasterTransaction mt ON mt.Id = mst.MasterTransactionId
+    LEFT JOIN tenantinetcsc.EboDetail ed ON ed.Id = mt.EboDetailId
+    LEFT JOIN tenantinetcsc.`User` tu ON tu.Id = ed.UserId
+    LEFT JOIN (
+        SELECT DISTINCT iwt.IHubReferenceId  
+        FROM ihubcore.IHubWalletTransaction iwt  
+        WHERE DATE(iwt.creationTs) BETWEEN %(start_date)s AND CURRENT_DATE()
+    ) a ON a.IHubReferenceId = mt.TransactionRefNum
+    WHERE DATE(ut.CreationTs) BETWEEN %(start_date)s' and %(end_date)s
+            ]
+[parameters: {'start_date': datetime.date(2025, 5, 16), 'end_date': datetime.date(2025, 5, 27)}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-06-02 18:54:04,658 - ERROR - Databasr error in PAN_UTI_SERVICE():(pymysql.err.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '2025-05-27'' at line 24")
+[SQL: 
+        SELECT 
+    ut.ApplicationNumber AS VENDOR_REFERENCE,
+    tu.UserName as IHUB_USERNAME,
+    ut.UTITSLTransID_Gateway AS UTITSLTrans_id,
+    mt.TransactionRefNum AS IHUB_REFERENCE,
+    mt.tenantDetailID as TENANT_ID,
+    mt.TransactionStatus AS IHUB_MASTER_STATUS,
+    ut.CreationTs as SERVICE_DATE,
+    ut.TransactionStatusType AS service_status,
+    CASE 
+        WHEN a.IHubReferenceId IS NOT NULL THEN 'Yes'
+        ELSE 'No'
+    END AS IHUB_LEDGER_STATUS
+    FROM ihubcore.UTIITSLTTransaction ut
+    LEFT JOIN ihubcore.MasterSubTransaction mst ON mst.Id = ut.MasterSubTransactionId
+    LEFT JOIN ihubcore.MasterTransaction mt ON mt.Id = mst.MasterTransactionId
+    LEFT JOIN tenantinetcsc.EboDetail ed ON ed.Id = mt.EboDetailId
+    LEFT JOIN tenantinetcsc.`User` tu ON tu.Id = ed.UserId
+    LEFT JOIN (
+        SELECT DISTINCT iwt.IHubReferenceId  
+        FROM ihubcore.IHubWalletTransaction iwt  
+        WHERE DATE(iwt.creationTs) BETWEEN %(start_date)s AND CURRENT_DATE()
+    ) a ON a.IHubReferenceId = mt.TransactionRefNum
+    WHERE DATE(ut.CreationTs) BETWEEN %(start_date)s' and %(end_date)s
+            ]
+[parameters: {'start_date': datetime.date(2025, 5, 16), 'end_date': datetime.date(2025, 5, 27)}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-06-02 18:54:04,658 - INFO - Entered Tenant filtering function
+2025-06-02 18:54:04,659 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 18:54:05,900 - INFO - Filteration Starts for Pan_UTI service
+2025-06-02 18:54:05,901 - ERROR - Error in main(): 'SERVICE_DATE'
+2025-06-02 18:54:05,902 - INFO - Result sent as API
+2025-06-02 18:54:05,902 - INFO - ----------------------------------
+2025-06-02 18:54:29,241 - INFO - --------------------------------------------
+2025-06-02 18:54:29,241 - INFO - Entered Main Function...
+2025-06-02 18:54:30,192 - INFO - Records found within the date range. Running reconciliation...
+2025-06-02 18:54:30,192 - INFO - Entering Reconciliation for Pan_UTI Service
+2025-06-02 18:54:30,195 - INFO - Fetching data from HUB for Pan_UTI
+2025-06-02 18:54:30,198 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 18:54:33,533 - INFO - Fetching Data from EBO Wallet Transaction
+2025-06-02 18:54:33,534 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 18:54:34,856 - INFO - Entered Tenant filtering function
+2025-06-02 18:54:34,857 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 18:54:35,892 - INFO - Filteration Starts for Pan_UTI service
+2025-06-02 18:54:35,929 - ERROR - Error in main(): 'VENDOR_STATUS'
+2025-06-02 18:54:35,931 - INFO - Result sent as API
+2025-06-02 18:54:35,932 - INFO - ----------------------------------
+2025-06-02 18:59:01,976 - INFO - --------------------------------------------
+2025-06-02 18:59:01,976 - INFO - Entered Main Function...
+2025-06-02 18:59:02,580 - INFO - Records found within the date range. Running reconciliation...
+2025-06-02 18:59:02,581 - INFO - Entering Reconciliation for Pan_UTI Service
+2025-06-02 18:59:02,583 - INFO - Fetching data from HUB for Pan_UTI
+2025-06-02 18:59:02,583 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 18:59:07,628 - INFO - Fetching Data from EBO Wallet Transaction
+2025-06-02 18:59:07,629 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 18:59:08,576 - INFO - Entered Tenant filtering function
+2025-06-02 18:59:08,577 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 18:59:09,599 - INFO - Filteration Starts for Pan_UTI service
+2025-06-02 18:59:09,628 - ERROR - Error in main(): 'VENDOR_STATUS'
+2025-06-02 18:59:09,630 - INFO - Result sent as API
+2025-06-02 18:59:09,630 - INFO - ----------------------------------
+2025-06-02 19:01:03,512 - INFO - --------------------------------------------
+2025-06-02 19:01:03,512 - INFO - Entered Main Function...
+2025-06-02 19:01:03,982 - INFO - Records found within the date range. Running reconciliation...
+2025-06-02 19:01:03,983 - INFO - Entering Reconciliation for Pan_UTI Service
+2025-06-02 19:01:03,988 - ERROR - Error in main(): ''
+2025-06-02 19:01:03,988 - INFO - Result sent as API
+2025-06-02 19:01:03,988 - INFO - ----------------------------------
+2025-06-02 19:01:12,072 - INFO - --------------------------------------------
+2025-06-02 19:01:12,072 - INFO - Entered Main Function...
+2025-06-02 19:01:12,259 - INFO - Records found within the date range. Running reconciliation...
+2025-06-02 19:01:12,259 - INFO - Entering Reconciliation for Pan_UTI Service
+2025-06-02 19:01:12,262 - ERROR - Error in main(): ''
+2025-06-02 19:01:12,262 - INFO - Result sent as API
+2025-06-02 19:01:12,263 - INFO - ----------------------------------
+2025-06-02 19:02:55,406 - INFO - --------------------------------------------
+2025-06-02 19:02:55,406 - INFO - Entered Main Function...
+2025-06-02 19:02:55,897 - INFO - Records found within the date range. Running reconciliation...
+2025-06-02 19:02:55,897 - INFO - Entering Reconciliation for Pan_UTI Service
+2025-06-02 19:02:55,901 - INFO - Fetching data from HUB for Pan_UTI
+2025-06-02 19:02:55,902 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:02:59,185 - INFO - Fetching Data from EBO Wallet Transaction
+2025-06-02 19:02:59,186 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:02:59,894 - INFO - Entered Tenant filtering function
+2025-06-02 19:02:59,894 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:03:00,743 - INFO - Filteration Starts for Pan_UTI service
+2025-06-02 19:03:00,894 - INFO - Filteration Ends
+2025-06-02 19:03:00,896 - INFO - Reconciliation Ends
+2025-06-02 19:03:00,969 - INFO - Result sent as API
+2025-06-02 19:03:00,969 - INFO - ----------------------------------
+2025-06-02 19:03:39,240 - INFO - --------------------------------------------
+2025-06-02 19:03:39,241 - INFO - Entered Main Function...
+2025-06-02 19:03:39,593 - INFO - Records found within the date range. Running reconciliation...
+2025-06-02 19:03:39,593 - INFO - Entering Reconciliation for Pan_UTI Service
+2025-06-02 19:03:39,598 - INFO - Fetching data from HUB for Pan_UTI
+2025-06-02 19:03:39,598 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:03:39,599 - ERROR - Error during SQL execution: (pymysql.err.OperationalError) (2013, 'Lost connection to MySQL server during query')
+[SQL: 
+        SELECT 
+    ut.ApplicationNumber AS VENDOR_REFERENCE,
+    tu.UserName as IHUB_USERNAME,
+    ut.UTITSLTransID_Gateway AS UTITSLTrans_id,
+    mt.TransactionRefNum AS IHUB_REFERENCE,
+    mt.tenantDetailID as TENANT_ID,
+    mt.TransactionStatus AS IHUB_MASTER_STATUS,
+    ut.CreationTs as SERVICE_DATE,
+    ut.TransactionStatusType AS service_status,
+    CASE 
+        WHEN a.IHubReferenceId IS NOT NULL THEN 'Yes'
+        ELSE 'No'
+    END AS IHUB_LEDGER_STATUS
+    FROM ihubcore.UTIITSLTTransaction ut
+    LEFT JOIN ihubcore.MasterSubTransaction mst ON mst.Id = ut.MasterSubTransactionId
+    LEFT JOIN ihubcore.MasterTransaction mt ON mt.Id = mst.MasterTransactionId
+    LEFT JOIN tenantinetcsc.EboDetail ed ON ed.Id = mt.EboDetailId
+    LEFT JOIN tenantinetcsc.`User` tu ON tu.Id = ed.UserId
+    LEFT JOIN (
+        SELECT DISTINCT iwt.IHubReferenceId  
+        FROM ihubcore.IHubWalletTransaction iwt  
+        WHERE DATE(iwt.creationTs) BETWEEN %(start_date)s AND CURRENT_DATE()
+    ) a ON a.IHubReferenceId = mt.TransactionRefNum
+    WHERE DATE(ut.CreationTs) BETWEEN %(start_date)s and %(end_date)s
+            ]
+[parameters: {'start_date': datetime.date(2025, 5, 16), 'end_date': datetime.date(2025, 5, 27)}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-06-02 19:03:40,600 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:03:43,750 - INFO - Fetching Data from EBO Wallet Transaction
+2025-06-02 19:03:43,751 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:03:44,724 - INFO - Entered Tenant filtering function
+2025-06-02 19:03:44,725 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:03:45,683 - INFO - Filteration Starts for Pan_UTI service
+2025-06-02 19:03:45,851 - INFO - Filteration Ends
+2025-06-02 19:03:45,852 - INFO - Reconciliation Ends
+2025-06-02 19:03:46,007 - INFO - Result sent as API
+2025-06-02 19:03:46,007 - INFO - ----------------------------------
+2025-06-02 19:04:51,890 - INFO - --------------------------------------------
+2025-06-02 19:04:51,890 - INFO - Entered Main Function...
+2025-06-02 19:04:52,236 - INFO - Records found within the date range. Running reconciliation...
+2025-06-02 19:04:52,237 - INFO - Entering Reconciliation for Pan_UTI Service
+2025-06-02 19:04:52,247 - INFO - Fetching data from HUB for Pan_UTI
+2025-06-02 19:04:52,248 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:04:52,250 - ERROR - Error during SQL execution: (pymysql.err.OperationalError) (2013, 'Lost connection to MySQL server during query')
+[SQL: 
+        SELECT 
+    ut.ApplicationNumber AS VENDOR_REFERENCE,
+    tu.UserName as IHUB_USERNAME,
+    ut.UTITSLTransID_Gateway AS UTITSLTrans_id,
+    mt.TransactionRefNum AS IHUB_REFERENCE,
+    mt.tenantDetailID as TENANT_ID,
+    mt.TransactionStatus AS IHUB_MASTER_STATUS,
+    ut.CreationTs as SERVICE_DATE,
+    ut.TransactionStatusType AS service_status,
+    CASE 
+        WHEN a.IHubReferenceId IS NOT NULL THEN 'Yes'
+        ELSE 'No'
+    END AS IHUB_LEDGER_STATUS
+    FROM ihubcore.UTIITSLTTransaction ut
+    LEFT JOIN ihubcore.MasterSubTransaction mst ON mst.Id = ut.MasterSubTransactionId
+    LEFT JOIN ihubcore.MasterTransaction mt ON mt.Id = mst.MasterTransactionId
+    LEFT JOIN tenantinetcsc.EboDetail ed ON ed.Id = mt.EboDetailId
+    LEFT JOIN tenantinetcsc.`User` tu ON tu.Id = ed.UserId
+    LEFT JOIN (
+        SELECT DISTINCT iwt.IHubReferenceId  
+        FROM ihubcore.IHubWalletTransaction iwt  
+        WHERE DATE(iwt.creationTs) BETWEEN %(start_date)s AND CURRENT_DATE()
+    ) a ON a.IHubReferenceId = mt.TransactionRefNum
+    WHERE DATE(ut.CreationTs) BETWEEN %(start_date)s and %(end_date)s
+            ]
+[parameters: {'start_date': datetime.date(2025, 5, 16), 'end_date': datetime.date(2025, 5, 27)}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-06-02 19:04:53,251 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:04:56,313 - INFO - Fetching Data from EBO Wallet Transaction
+2025-06-02 19:04:56,314 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:04:57,231 - INFO - Entered Tenant filtering function
+2025-06-02 19:04:57,232 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:04:58,175 - INFO - Filteration Starts for Pan_UTI service
+2025-06-02 19:04:58,342 - INFO - Filteration Ends
+2025-06-02 19:04:58,343 - INFO - Reconciliation Ends
+2025-06-02 19:04:58,430 - INFO - Result sent as API
+2025-06-02 19:04:58,430 - INFO - ----------------------------------
+2025-06-02 19:22:14,662 - INFO - --------------------------------------------
+2025-06-02 19:22:14,662 - INFO - Entered Main Function...
+2025-06-02 19:22:14,950 - INFO - Records found within the date range. Running reconciliation...
+2025-06-02 19:22:14,951 - INFO - Entering Reconciliation for Pan_UTI Service
+2025-06-02 19:22:14,955 - INFO - Fetching data from HUB for Pan_UTI
+2025-06-02 19:22:14,955 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:22:14,957 - ERROR - Error during SQL execution: (pymysql.err.OperationalError) (2013, 'Lost connection to MySQL server during query')
+[SQL: 
+        SELECT 
+    ut.ApplicationNumber AS VENDOR_REFERENCE,
+    tu.UserName as IHUB_USERNAME,
+    ut.UTITSLTransID_Gateway AS UTITSLTrans_id,
+    mt.TransactionRefNum AS IHUB_REFERENCE,
+    mt.tenantDetailID as TENANT_ID,
+    mt.TransactionStatus AS IHUB_MASTER_STATUS,
+    ut.CreationTs as SERVICE_DATE,
+    ut.TransactionStatusType AS service_status,
+    CASE 
+        WHEN a.IHubReferenceId IS NOT NULL THEN 'Yes'
+        ELSE 'No'
+    END AS IHUB_LEDGER_STATUS
+    FROM ihubcore.UTIITSLTTransaction ut
+    LEFT JOIN ihubcore.MasterSubTransaction mst ON mst.Id = ut.MasterSubTransactionId
+    LEFT JOIN ihubcore.MasterTransaction mt ON mt.Id = mst.MasterTransactionId
+    LEFT JOIN tenantinetcsc.EboDetail ed ON ed.Id = mt.EboDetailId
+    LEFT JOIN tenantinetcsc.`User` tu ON tu.Id = ed.UserId
+    LEFT JOIN (
+        SELECT DISTINCT iwt.IHubReferenceId  
+        FROM ihubcore.IHubWalletTransaction iwt  
+        WHERE DATE(iwt.creationTs) BETWEEN %(start_date)s AND CURRENT_DATE()
+    ) a ON a.IHubReferenceId = mt.TransactionRefNum
+    WHERE DATE(ut.CreationTs) BETWEEN %(start_date)s and %(end_date)s
+            ]
+[parameters: {'start_date': datetime.date(2025, 5, 16), 'end_date': datetime.date(2025, 5, 27)}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-06-02 19:22:15,958 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:22:19,147 - INFO - Fetching Data from EBO Wallet Transaction
+2025-06-02 19:22:19,148 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:22:19,810 - INFO - Entered Tenant filtering function
+2025-06-02 19:22:19,810 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-02 19:22:20,748 - INFO - Filteration Starts for Pan_UTI service
+2025-06-02 19:22:20,962 - INFO - Filteration Ends
+2025-06-02 19:22:20,963 - INFO - Reconciliation Ends
+2025-06-02 19:22:21,064 - INFO - Result sent as API
+2025-06-02 19:22:21,064 - INFO - ----------------------------------

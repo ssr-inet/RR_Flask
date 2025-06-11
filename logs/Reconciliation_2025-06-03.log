@@ -1,0 +1,122 @@
+2025-06-03 15:54:10,496 - INFO - --------------------------------------------
+2025-06-03 15:54:10,496 - INFO - Entered Main Function...
+2025-06-03 15:54:10,996 - INFO - Records found within the date range. Running reconciliation...
+2025-06-03 15:54:10,996 - INFO - Entering Reconciliation for RECHARGE Service
+2025-06-03 15:54:10,997 - INFO - Recharge service: Column 'REFID' renamed to 'REFID'
+2025-06-03 15:54:10,997 - INFO - Fetching data from HUB for RECHARGE
+2025-06-03 15:54:10,998 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-03 15:54:14,329 - INFO - Fetching Data from EBO Wallet Transaction
+2025-06-03 15:54:14,329 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-03 15:54:14,987 - INFO - Entered Tenant filtering function
+2025-06-03 15:54:14,987 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-03 15:54:15,208 - INFO - Filteration Starts for RECHARGE service
+2025-06-03 15:54:15,297 - INFO - Filteration Ends
+2025-06-03 15:54:15,297 - INFO - Reconciliation Ends
+2025-06-03 15:54:15,322 - INFO - Result sent as API
+2025-06-03 15:54:15,322 - INFO - ----------------------------------
+2025-06-03 15:56:34,058 - INFO - --------------------------------------------
+2025-06-03 15:56:34,059 - INFO - Entered Main Function...
+2025-06-03 15:56:34,447 - INFO - Records found within the date range. Running reconciliation...
+2025-06-03 15:56:34,448 - INFO - Entering Reconciliation for RECHARGE Service
+2025-06-03 15:56:34,451 - INFO - Recharge service: Column 'REFID' renamed to 'REFID'
+2025-06-03 15:56:34,451 - INFO - Fetching data from HUB for RECHARGE
+2025-06-03 15:56:34,451 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-03 15:56:34,452 - ERROR - Error during SQL execution: (pymysql.err.OperationalError) (2013, 'Lost connection to MySQL server during query')
+[SQL: 
+        SELECT mt2.TransactionRefNum AS IHUB_REFERENCE,
+               mt2.TenantDetailId as TENANT_ID,   
+               sn.requestID AS VENDOR_REFERENCE,
+               u.UserName as IHUB_USERNAME, 
+               mt2.TransactionStatus AS IHUB_MASTER_STATUS,
+               sn.CreationTs AS SERVICE_DATE, 
+               sn.rechargeStatus AS service_status,
+               CASE
+                   WHEN iwt.IHubReferenceId IS NOT NULL THEN 'Yes'
+                   ELSE 'No'
+               END AS IHUB_LEDGER_STATUS,
+               CASE
+                   WHEN twt.IHubReferenceId IS NOT NULL THEN 'Yes'
+                   ELSE 'No'
+               END AS TENANT_LEDGER_STATUS
+        FROM ihubcore.MasterTransaction mt2
+        LEFT JOIN ihubcore.MasterSubTransaction mst ON mst.MasterTransactionId = mt2.Id
+        LEFT JOIN ihubcore.PsRechargeTransaction sn ON sn.MasterSubTransactionId = mst.Id
+        LEFT JOIN tenantinetcsc.EboDetail ed ON mt2.EboDetailId = ed.Id
+        LEFT JOIN tenantinetcsc.`User` u ON u.Id = ed.UserId
+        LEFT JOIN (
+            SELECT DISTINCT IHubReferenceId
+            FROM ihubcore.IHubWalletTransaction
+            WHERE DATE(CreationTs) BETWEEN %(start_date)s AND CURRENT_DATE()
+        ) iwt ON iwt.IHubReferenceId = mt2.TransactionRefNum
+        LEFT JOIN (
+            SELECT DISTINCT IHubReferenceId
+            FROM ihubcore.TenantWalletTransaction
+            WHERE DATE(CreationTs) BETWEEN %(start_date)s AND CURRENT_DATE()
+        ) twt ON twt.IHubReferenceId = mt2.TransactionRefNum
+        WHERE DATE(sn.CreationTs) BETWEEN %(start_date)s AND %(end_date)s
+    ]
+[parameters: {'start_date': datetime.date(2025, 4, 14), 'end_date': datetime.date(2025, 5, 14)}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-06-03 15:56:35,453 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-03 15:57:30,259 - INFO - Fetching Data from EBO Wallet Transaction
+2025-06-03 15:57:30,260 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-03 15:57:32,443 - INFO - Entered Tenant filtering function
+2025-06-03 15:57:32,443 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-03 15:57:32,849 - INFO - Filteration Starts for RECHARGE service
+2025-06-03 15:57:33,039 - INFO - Filteration Ends
+2025-06-03 15:57:33,043 - INFO - Reconciliation Ends
+2025-06-03 15:57:33,144 - INFO - Result sent as API
+2025-06-03 15:57:33,144 - INFO - ----------------------------------
+2025-06-03 16:15:31,881 - INFO - --------------------------------------------
+2025-06-03 16:15:31,882 - INFO - Entered Main Function...
+2025-06-03 16:15:31,911 - INFO - Records found within the date range. Running reconciliation...
+2025-06-03 16:15:31,912 - INFO - Entering Reconciliation for RECHARGE Service
+2025-06-03 16:15:31,913 - INFO - Recharge service: Column 'REFID' renamed to 'REFID'
+2025-06-03 16:15:31,913 - INFO - Fetching data from HUB for RECHARGE
+2025-06-03 16:15:31,914 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-03 16:15:31,916 - ERROR - Error during SQL execution: (pymysql.err.OperationalError) (2013, 'Lost connection to MySQL server during query')
+[SQL: 
+        SELECT mt2.TransactionRefNum AS IHUB_REFERENCE,
+               mt2.TenantDetailId as TENANT_ID,   
+               sn.requestID AS VENDOR_REFERENCE,
+               u.UserName as IHUB_USERNAME, 
+               mt2.TransactionStatus AS IHUB_MASTER_STATUS,
+               sn.CreationTs AS SERVICE_DATE, 
+               sn.rechargeStatus AS service_status,
+               CASE
+                   WHEN iwt.IHubReferenceId IS NOT NULL THEN 'Yes'
+                   ELSE 'No'
+               END AS IHUB_LEDGER_STATUS,
+               CASE
+                   WHEN twt.IHubReferenceId IS NOT NULL THEN 'Yes'
+                   ELSE 'No'
+               END AS TENANT_LEDGER_STATUS
+        FROM ihubcore.MasterTransaction mt2
+        LEFT JOIN ihubcore.MasterSubTransaction mst ON mst.MasterTransactionId = mt2.Id
+        LEFT JOIN ihubcore.PsRechargeTransaction sn ON sn.MasterSubTransactionId = mst.Id
+        LEFT JOIN tenantinetcsc.EboDetail ed ON mt2.EboDetailId = ed.Id
+        LEFT JOIN tenantinetcsc.`User` u ON u.Id = ed.UserId
+        LEFT JOIN (
+            SELECT DISTINCT IHubReferenceId
+            FROM ihubcore.IHubWalletTransaction
+            WHERE DATE(CreationTs) BETWEEN %(start_date)s AND CURRENT_DATE()
+        ) iwt ON iwt.IHubReferenceId = mt2.TransactionRefNum
+        LEFT JOIN (
+            SELECT DISTINCT IHubReferenceId
+            FROM ihubcore.TenantWalletTransaction
+            WHERE DATE(CreationTs) BETWEEN %(start_date)s AND CURRENT_DATE()
+        ) twt ON twt.IHubReferenceId = mt2.TransactionRefNum
+        WHERE DATE(sn.CreationTs) BETWEEN %(start_date)s AND %(end_date)s
+    ]
+[parameters: {'start_date': datetime.date(2025, 5, 22), 'end_date': datetime.date(2025, 5, 22)}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-06-03 16:15:32,917 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-03 16:15:35,799 - INFO - Fetching Data from EBO Wallet Transaction
+2025-06-03 16:15:35,801 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-03 16:15:36,458 - INFO - Entered Tenant filtering function
+2025-06-03 16:15:36,459 - INFO - Entered helper function to execute SQL with retry logic
+2025-06-03 16:15:36,667 - INFO - Filteration Starts for RECHARGE service
+2025-06-03 16:15:36,713 - INFO - Filteration Ends
+2025-06-03 16:15:36,714 - INFO - Reconciliation Ends
+2025-06-03 16:15:36,737 - INFO - Result sent as API
+2025-06-03 16:15:36,737 - INFO - ----------------------------------

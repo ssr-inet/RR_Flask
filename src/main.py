@@ -9,8 +9,12 @@ def main(from_date, to_date, service_name, file, transaction_type):
     try:
         logger.info("--------------------------------------------")
         logger.info("Entered Main Function...")
-
         df_excel = pd.read_excel(file, dtype=str)
+        if service_name == "Pan_UTI":
+            df_excel = df_excel.rename(
+                columns={"Refrence No": "REFID", "trans Date": "DATE"}
+            )
+
         df_excel["DATE"] = pd.to_datetime(df_excel["DATE"], errors="coerce").dt.date
 
         from_date = pd.to_datetime(from_date).date()

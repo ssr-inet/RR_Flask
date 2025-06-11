@@ -67,7 +67,16 @@ def outward_service_selection(start_date, end_date, service_name, df_excel):
         )
         result = filtering_Data(hub_data, df_excel, service_name, tenant_data)
     elif service_name == "Pan_UTI":
-        df_excel = df_excel.rename()
+        df_excel = df_excel.rename(
+            columns={"DATE": "VENDOR_DATE", "Payment Status": "VENDOR_STATUS"}
+        )
+        df_excel["VENDOR_STATUS"] = df_excel["VENDOR_STATUS"].replace(
+            "Payment Refunded due to Incomplete Application", "failed"
+        )
+        df_excel["VENDOR_STATUS"] = (
+            df_excel["VENDOR_STATUS"].replace("", pd.NA).fillna("success")
+        )
+        # print(df_excel[""])
         tenant_service_id = 4
         Hub_service_id = 4
         hub_data = Panuti_service(start_date, end_date, service_name)
@@ -734,8 +743,93 @@ def recharge_Service(start_date, end_date, service_name):
 
 
 # ---------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------
+# PAN-UTI Service function
+def Panuti_service(start_date, end_date, service_name):
+    logger.info(f"Fetching data from HUB for {service_name}")
+    result = pd.DataFrame()
+    query = text(
+        f"""
+        SELECT 
+    ut.ApplicationNumber AS VENDOR_REFERENCE,
+    tu.UserName as IHUB_USERNAME,
+    ut.UTITSLTransID_Gateway AS UTITSLTrans_id,
+    mt.TransactionRefNum AS IHUB_REFERENCE,
+    mt.tenantDetailID as TENANT_ID,
+    mt.TransactionStatus AS IHUB_MASTER_STATUS,
+    ut.CreationTs as SERVICE_DATE,
+    ut.TransactionStatusType AS service_status,
+    CASE 
+        WHEN a.IHubReferenceId IS NOT NULL THEN 'Yes'
+        ELSE 'No'
+    END AS IHUB_LEDGER_STATUS
+    FROM ihubcore.UTIITSLTTransaction ut
+    LEFT JOIN ihubcore.MasterSubTransaction mst ON mst.Id = ut.MasterSubTransactionId
+    LEFT JOIN ihubcore.MasterTransaction mt ON mt.Id = mst.MasterTransactionId
+    LEFT JOIN tenantinetcsc.EboDetail ed ON ed.Id = mt.EboDetailId
+    LEFT JOIN tenantinetcsc.`User` tu ON tu.Id = ed.UserId
+    LEFT JOIN (
+        SELECT DISTINCT iwt.IHubReferenceId  
+        FROM ihubcore.IHubWalletTransaction iwt  
+        WHERE DATE(iwt.creationTs) BETWEEN :start_date AND CURRENT_DATE()
+    ) a ON a.IHubReferenceId = mt.TransactionRefNum
+    WHERE DATE(ut.CreationTs) BETWEEN :start_date and :end_date
+            """
+    )
+    params = {"start_date": start_date, "end_date": end_date}
+
+    # Reading data from Server
+    try:
+        df_db = execute_sql_with_retry(
+            query,
+            params=params,
+        )
+        if df_db.empty:
+            logger.warning(f"No data returned for service:{service_name}")
+            return pd.DataFrame()
+        # mapping status name with enum
+        status_mapping = {
+            0: "initiated",
+            1: "success",
+            2: "failed",
+            3: "inprogress",
+            4: "partial success",
+        }
+        df_db[f"{service_name}_STATUS"] = df_db["service_status"].apply(
+            lambda x: status_mapping.get(x, x)
+        )
+        df_db.drop(columns=["service_status"], inplace=True)
+        # calling filtering function
+        tenant_Id_mapping = {
+            1: "INET-CSC",
+            2: "ITI_ESEVA",
+            3: "UPCB",
+        }
+        df_db["TENANT_ID"] = (
+            df_db["TENANT_ID"].map(tenant_Id_mapping).fillna(df_db["TENANT_ID"])
+        )
+        ebo_result = get_ebo_wallet_data(start_date, end_date)
+        if ebo_result is not None and not ebo_result.empty:
+            result = pd.merge(
+                df_db,
+                ebo_result,
+                how="left",
+                left_on="IHUB_REFERENCE",
+                right_on="TransactionRefNum",
+                validate="one_to_one",
+            )
+        else:
+            logger.warning("No ebo wallet data returned")
+            result = df_db
+
+    except SQLAlchemyError as e:
+        logger.error(f"Databasr error in PAN_UTI_SERVICE():{e}")
+    except Exception as e:
+        logger.error(f"Unexpected error in PAN_UTI_SERVICE():{e} ")
+    return result
 
 
+# ----------------------------------------------------------------------------------------
 # IMT SERVICE FUNCTION-------------------------------------------------------------------
 def IMT_Service(start_date, end_date, df_excel, service_name):
     logger.info(f"Fetching data from HUB for {service_name}")
@@ -868,48 +962,6 @@ def Bbps_service(start_date, end_date, df_excel, service_name):
         2: "failed",
         3: "inprogress",
         4: "partialsuccuess",
-    }
-    df_db[f"{service_name}_STATUS"] = df_db[f"{service_name}_STATUS"].apply(
-        lambda x: status_mapping.get(x, x)
-    )
-    # calling filtering function
-    result = filtering_Data(df_db, df_excel, service_name)
-    return result
-
-
-# ------------------------------------------------------------------------
-# PAN-UTI Service function
-def Panuti_service(start_date, end_date, df_excel, service_name):
-    logger.info(f"Fetching data from HUB for {service_name}")
-    query = f"""
-        select u.ApplicationNumber as VENDOR_REFERENCE,
-        u.UTITSLTransID_Gateway as UTITSLTrans_id,
-        mt.TransactionRefNum AS IHUB_REFERENCE,
-        mt.TransactionStatus AS IHUB_MASTER_STATUS,
-        u.TransactionStatusType as {service_name}_STATUS,
-        CASE When 
-        a.IHubReferenceId IS NOT NULL THEN 'Yes'
-        ELSE 'NO'
-        END AS 'IHUB_LEDGER_STATUS'
-        from ihubcore.UTIITSLTTransaction u 
-        left join ihubcore.MasterSubTransaction mst on mst.Id  = u.MasterSubTransactionId
-        left join ihubcore.MasterTransaction mt on mt.Id  = mst.MasterTransactionId
-        left join tenantinetcsc.EboDetail ed on ed.Id = mt.EboDetailId 
-        left join tenantinetcsc.`User` u  on u.id = ed.UserId 
-        left join (select DISTINCT iwt.IHubReferenceId  from ihubcore.IHubWalletTransaction iwt  
-        WHERE Date(iwt.creationTs) BETWEEN '{start_date}'AND CURRENT_DATE()) a 
-        on a.IHubReferenceId = mt.TransactionRefNum
-        where DATE(u.CreationTs) BETWEEN '{start_date}' and '{end_date}
-        """
-    # Reading data from Server
-    df_db = pd.read_sql(query, con=engine)
-    # mapping status name with enum
-    status_mapping = {
-        0: "initiated",
-        1: "success",
-        2: "failed",
-        3: "inprogress",
-        4: "partial success",
     }
     df_db[f"{service_name}_STATUS"] = df_db[f"{service_name}_STATUS"].apply(
         lambda x: status_mapping.get(x, x)
