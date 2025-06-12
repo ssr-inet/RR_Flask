@@ -57,7 +57,6 @@ def inward_service_selection(
 
 def filtering_Data(df_db, df_excel, service_name):
     logger.info(f"Filteration Starts for {service_name} service")
-    print("1cls")
     mapping = None
     # converting the date of both db and excel to string
     df_db["SERVICE_DATE"] = df_db["SERVICE_DATE"].dt.strftime("%Y-%m-%d")
@@ -118,7 +117,6 @@ def filtering_Data(df_db, df_excel, service_name):
     not_in_vendor = df_db[~df_db["VENDOR_REFERENCE"].isin(df_excel["REFID"])].copy()
     not_in_vendor["CATEGORY"] = "NOT_IN_VENDOR"
     not_in_vendor = safe_column_select(not_in_vendor, required_columns)
-    print("niv", not_in_vendor)
     # 2. Filtering Data Present in Vendor XL but Not in Ihub Portal
     not_in_portal = df_excel[~df_excel["REFID"].isin(df_db["VENDOR_REFERENCE"])].copy()
     not_in_portal["CATEGORY"] = "NOT_IN_PORTAL"
@@ -129,8 +127,8 @@ def filtering_Data(df_db, df_excel, service_name):
         df_excel, left_on="VENDOR_REFERENCE", right_on="REFID", how="inner"
     ).copy()
     matched["CATEGORY"] = "MATCHED"
+    print(matched["AMOUNT"])
     matched = safe_column_select(matched, required_columns)
-    # print("matched", matched)
     # 5. Filtering Data that Mismatched in both Ihub Portal and Vendor Xl as : Mismatched
     matched[f"{service_name}_STATUS"] = matched[f"{service_name}_STATUS"].astype(str)
     # print(matched[f"{service_name}_STATUS"])
@@ -295,6 +293,7 @@ def filtering_Data(df_db, df_excel, service_name):
             "message": message,
             "Total_Success_count": success_count,
             "Total_Failed_count": failed_count,
+            "matched": matched,
         }
     else:
         combined = pd.concat(non_empty_dfs, ignore_index=True)
@@ -333,26 +332,26 @@ def get_ebo_wallet_data(start_date, end_date):
     ebo_df = None
     query = text(
         """
-        SELECT  
-            mt2.TransactionRefNum,
-            ewt.MasterTransactionsId,
-            MAX(CASE WHEN ewt.Description = 'Transaction - Credit' THEN 'Yes' ELSE 'No' END) AS TRANSACTION_CREDIT,
-            MAX(CASE WHEN ewt.Description = 'Transaction - Debit' THEN 'Yes' ELSE 'No' END) AS TRANSACTION_DEBIT,
-            MAX(CASE WHEN ewt.Description = 'Commission Added' THEN 'Yes' ELSE 'No' END) AS COMMISSION_CREDIT,
-            MAX(CASE WHEN ewt.Description = 'Commission - Reversal' THEN 'Yes' ELSE 'No' END) AS COMMISSION_REVERSAL
-        FROM
-            ihubcore.MasterTransaction mt2
-        JOIn 
-            tenantinetcsc.MasterTransaction mt on mt.TransactionRefNumIHub = mt2.TransactionRefNum
-        JOIN  
-            tenantinetcsc.EboWalletTransaction ewt
-            ON mt.Id = ewt.MasterTransactionsId
-        WHERE
-            DATE(mt2.CreationTs) BETWEEN :start_date AND :end_date AND
-            DATE(mt.CreationTs) BETWEEN :start_date AND :end_date 
-        GROUP BY
-            mt2.TransactionRefNum,
-            ewt.MasterTransactionsId
+    SELECT  
+    ewt.IHubReferenceId,
+    COALESCE(MAX(CASE WHEN ewt.Description = 'Transaction - Credit' THEN 'Yes' END), 'No') AS TRANSACTION_CREDIT,
+    COALESCE(MAX(CASE WHEN ewt.Description = 'Transaction - Debit' THEN 'Yes' END), 'No') AS TRANSACTION_DEBIT,
+    COALESCE(MAX(CASE WHEN ewt.Description = 'Commission Added' THEN 'Yes' END), 'No') AS COMMISSION_CREDIT,
+    COALESCE(MAX(CASE WHEN ewt.Description = 'Commission - Reversal' THEN 'Yes' END), 'No') AS COMMISSION_REVERSAL
+    FROM
+        ihubcore.MasterTransaction mt2
+    JOIN tenantinetcsc.MasterTransaction mt 
+        ON mt.TransactionRefNumIHub = mt2.TransactionRefNum
+    JOIN tenantinetcsc.EboWalletTransaction ewt 
+        ON mt.Id = ewt.MasterTransactionsId
+    WHERE
+        DATE(mt2.CreationTs) BETWEEN :start_date AND :end_date AND
+        DATE(mt.CreationTs) BETWEEN :start_date AND :end_date 
+        AND ewt.ServiceName = 'AEPS'
+        AND ewt.IHubReferenceId IS NOT NULL
+        AND ewt.IHubReferenceId <> ''
+    GROUP BY 
+        ewt.IHubReferenceId
     """
     )
 
@@ -467,7 +466,6 @@ def aeps_Service(start_date, end_date, service_name, transaction_type, df_excel)
             mt2.TransactionStatus AS IHUB_MASTER_STATUS,
             pat.CreationTs AS SERVICE_DATE,
             pat.TransStatus AS service_status,
-            pat.Amount as AMOUNT,
             CASE 
                 WHEN a.IHubReferenceId IS NOT NULL THEN 'Yes'
                 ELSE 'No'
@@ -540,7 +538,7 @@ def aeps_Service(start_date, end_date, service_name, transaction_type, df_excel)
                 ebo_result,
                 how="left",
                 left_on="IHUB_REFERENCE",
-                right_on="TransactionRefNum",
+                right_on="IHubReferenceId",
                 validate="one_to_one",
             )
         else:
