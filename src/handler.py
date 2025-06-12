@@ -8,6 +8,16 @@ def handler(result, message, service_name):
     if isinstance(result, str):
         logger.info("Error result sent as API")
         logger.info("----------------------------------")
+        # if message == "Hurray there is no Mistmatch values in your DataSet..!":
+        #     return jsonify(
+        #         {
+        #             "isSuccess": True,
+        #             "data": result,
+        #             "message": message,
+        #             "service_name": service_name,
+        #         }
+        #     )
+        # else:
         return jsonify(
             {
                 "isSuccess": False,
@@ -17,9 +27,11 @@ def handler(result, message, service_name):
             }
         )
     else:
-        has_data = any(
-            isinstance(value, list) and len(value) > 0 for value in result.values()
-        )
+    
+        # has_data = any(
+        #     isinstance(value, list) and len(value) > 0 for value in result.values()
+        # )
+        has_data = any(bool(v) for v in result.values())
         logger.info("Result sent as API")
         logger.info("----------------------------------")
 
@@ -27,7 +39,7 @@ def handler(result, message, service_name):
             {
                 "isSuccess": has_data,
                 "data": result,
-                "message": "",
+                "message": message,
                 "service_name": service_name,
             }
         )

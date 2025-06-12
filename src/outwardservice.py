@@ -50,7 +50,7 @@ def outward_service_selection(start_date, end_date, service_name, df_excel):
             7378,
             7379,
         )
-        Hub_service_id = ",".join(str(x) for x in Hub_service_id)
+        # Hub_service_id = ",".join(str(x) for x in Hub_service_id)
         hub_data = recharge_Service(start_date, end_date, service_name)
         tenant_data = tenant_filtering(
             start_date, end_date, tenant_service_id, Hub_service_id
@@ -486,34 +486,43 @@ def filtering_Data(df_db, df_excel, service_name, tenant_data):
     non_empty_dfs = [
         df for df in aligned_dfs if not df.empty and not df.isna().all().all()
     ]
-    combined = pd.concat(non_empty_dfs, ignore_index=True)
-    logger.info("Filteration Ends")
+    if not non_empty_dfs:
+        logger.info("Filteration Ends")
+        message = "Hurray there is no Mistmatch values in your DataSet..!"
+        return {
+            "message": message,
+            "Total_Success_count": success_count,
+            "Total_Failed_count": failed_count,
+        }
+    else:
+        combined = pd.concat(non_empty_dfs, ignore_index=True)
+        logger.info("Filteration Ends")
 
-    # Mapping all Scenarios with keys as Dictionary to retrun as result
-    mapping = {
-        "not_in_vendor": not_in_vendor,
-        "combined": combined,
-        "not_in_Portal": not_in_portal,
-        # "mismatched": mismatched,
-        # "NOT_IN_PORTAL_VENDOR_SUCC": not_in_portal_vendor_success,
-        "Tenant_db_ini_not_in_hubdb": tenant_data,
-        "VEND_IHUB_SUC-NIL": vend_ihub_succ_not_in_ledger,
-        "VEND_FAIL_IHUB_SUC-NIL": vend_fail_ihub_succ_not_in_ledger,
-        "VEND_SUC_IHUB_FAIL-NIL": vend_succ_ihub_fail_not_in_ledger,
-        # "IHUB_VEND_FAIL-NIL": ihub_vend_fail_not_in_ledger,
-        "IHUB_INT_VEND_SUC-NIL": ihub_initiate_vend_succes_not_in_ledger,
-        "VEND_FAIL_IHUB_INT-NIL": ihub_initiate_vend_fail_not_in_ledger,
-        # "VEND_IHUB_SUC": vend_ihub_succ,
-        "VEND_FAIL_IHUB_SUC": vend_fail_ihub_succ,
-        "VEND_SUC_IHUB_FAIL": vend_succ_ihub_fail,
-        # "IHUB_VEND_FAIL": ihub_vend_fail,
-        "IHUB_INT_VEND_SUC": ihub_initiate_vend_succes,
-        "VEND_FAIL_IHUB_INT": ihub_initiate_vend_fail,
-        "Total_Success_count": success_count,
-        "Total_Failed_count": failed_count,
-    }
+        # Mapping all Scenarios with keys as Dictionary to retrun as result
+        mapping = {
+            "not_in_vendor": not_in_vendor,
+            "combined": combined,
+            "not_in_Portal": not_in_portal,
+            # "mismatched": mismatched,
+            # "NOT_IN_PORTAL_VENDOR_SUCC": not_in_portal_vendor_success,
+            "Tenant_db_ini_not_in_hubdb": tenant_data,
+            "VEND_IHUB_SUC-NIL": vend_ihub_succ_not_in_ledger,
+            "VEND_FAIL_IHUB_SUC-NIL": vend_fail_ihub_succ_not_in_ledger,
+            "VEND_SUC_IHUB_FAIL-NIL": vend_succ_ihub_fail_not_in_ledger,
+            # "IHUB_VEND_FAIL-NIL": ihub_vend_fail_not_in_ledger,
+            "IHUB_INT_VEND_SUC-NIL": ihub_initiate_vend_succes_not_in_ledger,
+            "VEND_FAIL_IHUB_INT-NIL": ihub_initiate_vend_fail_not_in_ledger,
+            # "VEND_IHUB_SUC": vend_ihub_succ,
+            "VEND_FAIL_IHUB_SUC": vend_fail_ihub_succ,
+            "VEND_SUC_IHUB_FAIL": vend_succ_ihub_fail,
+            # "IHUB_VEND_FAIL": ihub_vend_fail,
+            "IHUB_INT_VEND_SUC": ihub_initiate_vend_succes,
+            "VEND_FAIL_IHUB_INT": ihub_initiate_vend_fail,
+            "Total_Success_count": success_count,
+            "Total_Failed_count": failed_count,
+        }
 
-    return mapping
+        return mapping
 
 
 # Filteration Function Ends-------------------------------------------------------------------
@@ -615,13 +624,17 @@ def tenant_filtering(start_date, end_date, tenant_service_id, hub_service_id):
         WHERE hub_id IS NULL
     """
     )
+    # print(query)
+    # print(tenant_service_id, hub_service_id)
+
     tenant_service_id = (
         [tenant_service_id] if isinstance(tenant_service_id, int) else tenant_service_id
     )
     hub_service_id = (
-        [hub_service_id] if isinstance(hub_service_id, int) else hub_service_id
+        [x for x in hub_service_id]
+        if isinstance(hub_service_id, (tuple, list))
+        else [hub_service_id]
     )
-
     # Convert lists to tuples for SQLAlchemy to treat them correctly in IN clauses
     params = {
         "start_date": start_date,
@@ -629,7 +642,7 @@ def tenant_filtering(start_date, end_date, tenant_service_id, hub_service_id):
         "tenant_service_id": tuple(tenant_service_id),
         "hub_service_id": tuple(hub_service_id),
     }
-
+    print(params)
     try:
         result = execute_sql_with_retry(query, params=params)
     except SQLAlchemyError as e:

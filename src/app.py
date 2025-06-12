@@ -155,7 +155,9 @@ def reconciliation():
         # Process data
         result = main(from_date, to_date, service_name, file, transaction_type)
         if isinstance(result, str):
-            return handler("", result)
+            message=result
+            result=""
+            return handler(result,message,service_name)
         else:
             for key, value in result.items():
                 # Convert pandas DataFrames to array
@@ -173,7 +175,7 @@ def reconciliation():
 
                 elif isinstance(value, list):
                     # Ensure any lists contain proper serializable objects
-                    print("list loop")
+                    # print("list loop")
                     result[key] = [
                         dict(item) if hasattr(item, "__dict__") else item
                         for item in value
@@ -181,10 +183,11 @@ def reconciliation():
 
                 elif hasattr(value, "__dict__"):
                     # Convert objects to dictionaries
-                    ("dict loop")
+                    # ("dict loop")
                     result[key] = value.__dict__
             # print(type(result))
-            return handler(result, "",service_name)
+            message="Data processed successfully!"
+            return handler(result,message,service_name)
     except Exception as e:
         logger.error(f"Reconciliation error: {str(e)}\n{traceback.format_exc()}")
         return jsonify({"error": "Failed to process data"}), 500

@@ -48,20 +48,20 @@ def inward_service_selection(
         hub_data = aeps_Service(
             start_date, end_date, service_name, transaction_type, df_excel
         )
-        tenant_data = tenant_filtering(
-            start_date, end_date, tenant_service_id, Hub_service_id
-        )
-        result = filtering_Data(hub_data, df_excel, service_name, tenant_data)
+        # tenant_data = tenant_filtering(
+        #     start_date, end_date, tenant_service_id, Hub_service_id
+        # )
+        result = filtering_Data(hub_data, df_excel, service_name)
     return result
 
 
-def filtering_Data(df_db, df_excel, service_name, tenant_data):
+def filtering_Data(df_db, df_excel, service_name):
     logger.info(f"Filteration Starts for {service_name} service")
-
+    print("1cls")
     mapping = None
     # converting the date of both db and excel to string
     df_db["SERVICE_DATE"] = df_db["SERVICE_DATE"].dt.strftime("%Y-%m-%d")
-    tenant_data["SERVICE_DATE"] = tenant_data["SERVICE_DATE"].dt.strftime("%Y-%m-%d")
+    # tenant_data["SERVICE_DATE"] = tenant_data["SERVICE_DATE"].dt.strftime("%Y-%m-%d")
 
     df_excel["VENDOR_DATE"] = pd.to_datetime(
         df_excel["VENDOR_DATE"], errors="coerce"
@@ -81,9 +81,9 @@ def filtering_Data(df_db, df_excel, service_name, tenant_data):
         lambda x: x.map(status_mapping).fillna(x)
     )
 
-    tenant_data["TENANT_STATUS"] = tenant_data["TENANT_STATUS"].apply(
-        lambda x: status_mapping.get(x, x)
-    )
+    # tenant_data["TENANT_STATUS"] = tenant_data["TENANT_STATUS"].apply(
+    #     lambda x: status_mapping.get(x, x)
+    # )
 
     # Renaming Col in Excel
     df_excel = df_excel.rename(columns={"STATUS": "VENDOR_STATUS"})
@@ -118,7 +118,7 @@ def filtering_Data(df_db, df_excel, service_name, tenant_data):
     not_in_vendor = df_db[~df_db["VENDOR_REFERENCE"].isin(df_excel["REFID"])].copy()
     not_in_vendor["CATEGORY"] = "NOT_IN_VENDOR"
     not_in_vendor = safe_column_select(not_in_vendor, required_columns)
-
+    print("niv", not_in_vendor)
     # 2. Filtering Data Present in Vendor XL but Not in Ihub Portal
     not_in_portal = df_excel[~df_excel["REFID"].isin(df_db["VENDOR_REFERENCE"])].copy()
     not_in_portal["CATEGORY"] = "NOT_IN_PORTAL"
@@ -130,17 +130,17 @@ def filtering_Data(df_db, df_excel, service_name, tenant_data):
     ).copy()
     matched["CATEGORY"] = "MATCHED"
     matched = safe_column_select(matched, required_columns)
-    # print(matched.columns)
+    # print("matched", matched)
     # 5. Filtering Data that Mismatched in both Ihub Portal and Vendor Xl as : Mismatched
     matched[f"{service_name}_STATUS"] = matched[f"{service_name}_STATUS"].astype(str)
-    print(matched[f"{service_name}_STATUS"])
+    # print(matched[f"{service_name}_STATUS"])
     mismatched = matched[
         matched[f"{service_name}_STATUS"].str.lower()
         != matched["VENDOR_STATUS"].str.lower()
     ].copy()
     mismatched["CATEGORY"] = "MISMATCHED"
     mismatched = safe_column_select(mismatched, required_columns)
-    print(1)
+    # print(1)
 
     # 6. Getting total count of success and failure data
     matched_success_status = matched[
@@ -254,15 +254,14 @@ def filtering_Data(df_db, df_excel, service_name, tenant_data):
     )
     # Scenario Block ends-----------------------------------------------------------------------------------
 
-    tenant_data["CATEGORY"] = "TENANT_DB_INTI - NOT_IN_IHUB"
-
+    # tenant_data["CATEGORY"] = "TENANT_DB_INTI - NOT_IN_IHUB"
     # Combining all Scenarios
     combined = [
         not_in_vendor,
         not_in_portal,
         # not_in_portal_vendor_success,
         # mismatched,
-        tenant_data,
+        # tenant_data,
         vend_ihub_succ_not_in_ledger,
         vend_fail_ihub_succ_not_in_ledger,
         vend_succ_ihub_fail_not_in_ledger,
@@ -289,34 +288,43 @@ def filtering_Data(df_db, df_excel, service_name, tenant_data):
     non_empty_dfs = [
         df for df in aligned_dfs if not df.empty and not df.isna().all().all()
     ]
-    combined = pd.concat(non_empty_dfs, ignore_index=True)
-    logger.info("Filteration Ends")
+    if not non_empty_dfs:
+        logger.info("Filteration Ends")
+        message = "Hurray there is no Mistmatch values in your DataSet..!"
+        return {
+            "message": message,
+            "Total_Success_count": success_count,
+            "Total_Failed_count": failed_count,
+        }
+    else:
+        combined = pd.concat(non_empty_dfs, ignore_index=True)
+        logger.info("Filteration Ends")
 
-    # Mapping all Scenarios with keys as Dictionary to retrun as result
-    mapping = {
-        "not_in_vendor": not_in_vendor,
-        "combined": combined,
-        "not_in_Portal": not_in_portal,
-        # "mismatched": mismatched,
-        # "NOT_IN_PORTAL_VENDOR_SUCC": not_in_portal_vendor_success,
-        "Tenant_db_ini_not_in_hubdb": tenant_data,
-        "VEND_IHUB_SUC-NIL": vend_ihub_succ_not_in_ledger,
-        "VEND_FAIL_IHUB_SUC-NIL": vend_fail_ihub_succ_not_in_ledger,
-        "VEND_SUC_IHUB_FAIL-NIL": vend_succ_ihub_fail_not_in_ledger,
-        # "IHUB_VEND_FAIL-NIL": ihub_vend_fail_not_in_ledger,
-        "IHUB_INT_VEND_SUC-NIL": ihub_initiate_vend_succes_not_in_ledger,
-        "VEND_FAIL_IHUB_INT-NIL": ihub_initiate_vend_fail_not_in_ledger,
-        # "VEND_IHUB_SUC": vend_ihub_succ,
-        "VEND_FAIL_IHUB_SUC": vend_fail_ihub_succ,
-        "VEND_SUC_IHUB_FAIL": vend_succ_ihub_fail,
-        # "IHUB_VEND_FAIL": ihub_vend_fail,
-        "IHUB_INT_VEND_SUC": ihub_initiate_vend_succes,
-        "VEND_FAIL_IHUB_INT": ihub_initiate_vend_fail,
-        "Total_Success_count": success_count,
-        "Total_Failed_count": failed_count,
-    }
+        # Mapping all Scenarios with keys as Dictionary to retrun as result
+        mapping = {
+            "not_in_vendor": not_in_vendor,
+            "combined": combined,
+            "not_in_Portal": not_in_portal,
+            # "mismatched": mismatched,
+            # "NOT_IN_PORTAL_VENDOR_SUCC": not_in_portal_vendor_success,
+            # "Tenant_db_ini_not_in_hubdb": tenant_data,
+            "VEND_IHUB_SUC-NIL": vend_ihub_succ_not_in_ledger,
+            "VEND_FAIL_IHUB_SUC-NIL": vend_fail_ihub_succ_not_in_ledger,
+            "VEND_SUC_IHUB_FAIL-NIL": vend_succ_ihub_fail_not_in_ledger,
+            # "IHUB_VEND_FAIL-NIL": ihub_vend_fail_not_in_ledger,
+            "IHUB_INT_VEND_SUC-NIL": ihub_initiate_vend_succes_not_in_ledger,
+            "VEND_FAIL_IHUB_INT-NIL": ihub_initiate_vend_fail_not_in_ledger,
+            # "VEND_IHUB_SUC": vend_ihub_succ,
+            "VEND_FAIL_IHUB_SUC": vend_fail_ihub_succ,
+            "VEND_SUC_IHUB_FAIL": vend_succ_ihub_fail,
+            # "IHUB_VEND_FAIL": ihub_vend_fail,
+            "IHUB_INT_VEND_SUC": ihub_initiate_vend_succes,
+            "VEND_FAIL_IHUB_INT": ihub_initiate_vend_fail,
+            "Total_Success_count": success_count,
+            "Total_Failed_count": failed_count,
+        }
 
-    return mapping
+        return mapping
 
 
 # Ebo Wallet Amount and commission  Debit credit check function  -------------------------------------------
@@ -334,11 +342,14 @@ def get_ebo_wallet_data(start_date, end_date):
             MAX(CASE WHEN ewt.Description = 'Commission - Reversal' THEN 'Yes' ELSE 'No' END) AS COMMISSION_REVERSAL
         FROM
             ihubcore.MasterTransaction mt2
+        JOIn 
+            tenantinetcsc.MasterTransaction mt on mt.TransactionRefNumIHub = mt2.TransactionRefNum
         JOIN  
             tenantinetcsc.EboWalletTransaction ewt
-            ON mt2.TenantMasterTransactionId = ewt.MasterTransactionsId
+            ON mt.Id = ewt.MasterTransactionsId
         WHERE
-            DATE(mt2.CreationTs) BETWEEN :start_date AND :end_date
+            DATE(mt2.CreationTs) BETWEEN :start_date AND :end_date AND
+            DATE(mt.CreationTs) BETWEEN :start_date AND :end_date 
         GROUP BY
             mt2.TransactionRefNum,
             ewt.MasterTransactionsId
@@ -366,76 +377,76 @@ def get_ebo_wallet_data(start_date, end_date):
 # tenant database filtering function------------------------------------------------
 def tenant_filtering(start_date, end_date, tenant_service_id, hub_service_id):
     logger.info("Entered Tenant filtering function")
-    result = None
+    result = pd.DataFrame()
 
     # Prepare a safe, parameterized query
-    query = text(
-        """
-        WITH cte AS (
-            SELECT src.Id as TENANT_ID,
-                   src.UserName as IHUB_USERNAME,
-                   src.TranAmountTotal as AMOUNT,
-                   src.TransactionStatus as TENANT_STATUS,
-                   src.CreationTs as SERVICE_DATE,
-                   src.VendorSubServiceMappingId,
-                   hub.Id AS hub_id
-            FROM (
-                SELECT mt.*, u.UserName
-                FROM tenantinetcsc.MasterTransaction mt
-                LEFT JOIN tenantinetcsc.EboDetail ed ON ed.id = mt.EboDetailId
-                LEFT JOIN tenantinetcsc.`User` u ON u.Id = ed.UserId
-                WHERE DATE(mt.CreationTs) BETWEEN :start_date AND :end_date
-                AND mt.VendorSubServiceMappingId IN :tenant_service_id
+    # query = text(
+    #     """
+    #     WITH cte AS (
+    #         SELECT src.Id as TENANT_ID,
+    #                src.UserName as IHUB_USERNAME,
+    #                src.TranAmountTotal as AMOUNT,
+    #                src.TransactionStatus as TENANT_STATUS,
+    #                src.CreationTs as SERVICE_DATE,
+    #                src.VendorSubServiceMappingId,
+    #                hub.Id AS hub_id
+    #         FROM (
+    #             SELECT mt.*, u.UserName
+    #             FROM tenantinetcsc.MasterTransaction mt
+    #             LEFT JOIN tenantinetcsc.EboDetail ed ON ed.id = mt.EboDetailId
+    #             LEFT JOIN tenantinetcsc.`User` u ON u.Id = ed.UserId
+    #             WHERE DATE(mt.CreationTs) BETWEEN :start_date AND :end_date
+    #             AND mt.VendorSubServiceMappingId IN :tenant_service_id
 
-                UNION ALL
+    #             UNION ALL
 
-                SELECT umt.*, u.UserName
-                FROM tenantupcb.MasterTransaction umt
-                LEFT JOIN tenantupcb.EboDetail ed ON ed.id = umt.EboDetailId
-                LEFT JOIN tenantupcb.`User` u ON u.Id = ed.UserId
-                WHERE DATE(umt.CreationTs) BETWEEN :start_date AND :end_date
-                AND umt.VendorSubServiceMappingId IN :tenant_service_id
+    #             SELECT umt.*, u.UserName
+    #             FROM tenantupcb.MasterTransaction umt
+    #             LEFT JOIN tenantupcb.EboDetail ed ON ed.id = umt.EboDetailId
+    #             LEFT JOIN tenantupcb.`User` u ON u.Id = ed.UserId
+    #             WHERE DATE(umt.CreationTs) BETWEEN :start_date AND :end_date
+    #             AND umt.VendorSubServiceMappingId IN :tenant_service_id
 
-                UNION ALL
+    #             UNION ALL
 
-                SELECT imt.*, u.UserName
-                FROM tenantiticsc.MasterTransaction imt
-                LEFT JOIN tenantiticsc.EboDetail ed ON ed.id = imt.EboDetailId
-                LEFT JOIN tenantiticsc.`User` u ON u.Id = ed.UserId
-                WHERE DATE(imt.CreationTs) BETWEEN :start_date AND :end_date
-                AND imt.VendorSubServiceMappingId IN :tenant_service_id
-            ) AS src
-            LEFT JOIN ihubcore.MasterTransaction AS hub
-            ON hub.TenantMasterTransactionId = src.Id
-            AND DATE(hub.CreationTs) BETWEEN :start_date AND :end_date
-            AND hub.VendorSubServiceMappingId IN :hub_service_id
-        )
-        SELECT *
-        FROM cte
-        WHERE hub_id IS NULL
-    """
-    )
-    tenant_service_id = (
-        [tenant_service_id] if isinstance(tenant_service_id, int) else tenant_service_id
-    )
-    hub_service_id = (
-        [hub_service_id] if isinstance(hub_service_id, int) else hub_service_id
-    )
+    #             SELECT imt.*, u.UserName
+    #             FROM tenantiticsc.MasterTransaction imt
+    #             LEFT JOIN tenantiticsc.EboDetail ed ON ed.id = imt.EboDetailId
+    #             LEFT JOIN tenantiticsc.`User` u ON u.Id = ed.UserId
+    #             WHERE DATE(imt.CreationTs) BETWEEN :start_date AND :end_date
+    #             AND imt.VendorSubServiceMappingId IN :tenant_service_id
+    #         ) AS src
+    #         LEFT JOIN ihubcore.MasterTransaction AS hub
+    #         ON hub.TenantMasterTransactionId = src.Id
+    #         AND DATE(hub.CreationTs) BETWEEN :start_date AND :end_date
+    #         AND hub.VendorSubServiceMappingId IN :hub_service_id
+    #     )
+    #     SELECT *
+    #     FROM cte
+    #     WHERE hub_id IS NULL
+    # """
+    # )
+    # tenant_service_id = (
+    #     [tenant_service_id] if isinstance(tenant_service_id, int) else tenant_service_id
+    # )
+    # hub_service_id = (
+    #     [hub_service_id] if isinstance(hub_service_id, int) else hub_service_id
+    # )
 
-    # Convert lists to tuples for SQLAlchemy to treat them correctly in IN clauses
-    params = {
-        "start_date": start_date,
-        "end_date": end_date,
-        "tenant_service_id": tuple(tenant_service_id),
-        "hub_service_id": tuple(hub_service_id),
-    }
-
-    try:
-        result = execute_sql_with_retry(query, params=params)
-    except SQLAlchemyError as e:
-        logger.error(f"Database error in Tenant DB Filtering: {e}")
-    except Exception as e:
-        logger.error(f"Unexpected error in Tenant DB Filtering: {e}")
+    # # Convert lists to tuples for SQLAlchemy to treat them correctly in IN clauses
+    # params = {
+    #     "start_date": start_date,
+    #     "end_date": end_date,
+    #     "tenant_service_id": tuple(tenant_service_id),
+    #     "hub_service_id": tuple(hub_service_id),
+    # }
+    # print(params)
+    # try:
+    #     result = execute_sql_with_retry(query, params=params)
+    # except SQLAlchemyError as e:
+    #     logger.error(f"Database error in Tenant DB Filtering: {e}")
+    # except Exception as e:
+    #     logger.error(f"Unexpected error in Tenant DB Filtering: {e}")
 
     return result
 
@@ -456,6 +467,7 @@ def aeps_Service(start_date, end_date, service_name, transaction_type, df_excel)
             mt2.TransactionStatus AS IHUB_MASTER_STATUS,
             pat.CreationTs AS SERVICE_DATE,
             pat.TransStatus AS service_status,
+            pat.Amount as AMOUNT,
             CASE 
                 WHEN a.IHubReferenceId IS NOT NULL THEN 'Yes'
                 ELSE 'No'
@@ -522,7 +534,6 @@ def aeps_Service(start_date, end_date, service_name, transaction_type, df_excel)
 
         # Merge with EBO Wallet data
         ebo_result = get_ebo_wallet_data(start_date, end_date)
-
         if ebo_result is not None and not ebo_result.empty:
             result = pd.merge(
                 df_db,
@@ -535,6 +546,8 @@ def aeps_Service(start_date, end_date, service_name, transaction_type, df_excel)
         else:
             logger.warning("No EBO Wallet data returned")
             result = df_db
+
+            # print("excel", df_excel.head(10))
 
     except SQLAlchemyError as e:
         logger.error(f"Database error in aeps_Service(): {e}")
