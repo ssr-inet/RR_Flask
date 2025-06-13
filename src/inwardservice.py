@@ -42,8 +42,8 @@ def inward_service_selection(
     if service_name == "AEPS":
         df_excel = df_excel.rename(columns={"UTR": "REFID", "DATE": "VENDOR_DATE"})
         logger.info("AEPS service: Column 'SERIALNUMBER' renamed to 'REFID'")
-        tenant_service_id = 159
-        Hub_service_id = 7374
+        # tenant_service_id = 159
+        # Hub_service_id = 7374
         # Hub_service_id = ",".join(str(x) for x in Hub_service_id)
         hub_data = aeps_Service(
             start_date, end_date, service_name, transaction_type, df_excel
@@ -127,18 +127,17 @@ def filtering_Data(df_db, df_excel, service_name):
         df_excel, left_on="VENDOR_REFERENCE", right_on="REFID", how="inner"
     ).copy()
     matched["CATEGORY"] = "MATCHED"
-    print(matched["AMOUNT"])
+
     matched = safe_column_select(matched, required_columns)
     # 5. Filtering Data that Mismatched in both Ihub Portal and Vendor Xl as : Mismatched
     matched[f"{service_name}_STATUS"] = matched[f"{service_name}_STATUS"].astype(str)
-    # print(matched[f"{service_name}_STATUS"])
+
     mismatched = matched[
         matched[f"{service_name}_STATUS"].str.lower()
         != matched["VENDOR_STATUS"].str.lower()
     ].copy()
     mismatched["CATEGORY"] = "MISMATCHED"
     mismatched = safe_column_select(mismatched, required_columns)
-    # print(1)
 
     # 6. Getting total count of success and failure data
     matched_success_status = matched[
@@ -347,7 +346,6 @@ def get_ebo_wallet_data(start_date, end_date):
     WHERE
         DATE(mt2.CreationTs) BETWEEN :start_date AND :end_date AND
         DATE(mt.CreationTs) BETWEEN :start_date AND :end_date 
-        AND ewt.ServiceName = 'AEPS'
         AND ewt.IHubReferenceId IS NOT NULL
         AND ewt.IHubReferenceId <> ''
     GROUP BY 
@@ -369,12 +367,10 @@ def get_ebo_wallet_data(start_date, end_date):
 
     return ebo_df
 
+    # ----------------------------------------------------------------------------------
 
-# ----------------------------------------------------------------------------------
-
-
-# tenant database filtering function------------------------------------------------
-def tenant_filtering(start_date, end_date, tenant_service_id, hub_service_id):
+    # tenant database filtering function------------------------------------------------
+    # def tenant_filtering(start_date, end_date, tenant_service_id, hub_service_id):
     logger.info("Entered Tenant filtering function")
     result = pd.DataFrame()
 
@@ -544,8 +540,6 @@ def aeps_Service(start_date, end_date, service_name, transaction_type, df_excel)
         else:
             logger.warning("No EBO Wallet data returned")
             result = df_db
-
-            # print("excel", df_excel.head(10))
 
     except SQLAlchemyError as e:
         logger.error(f"Database error in aeps_Service(): {e}")
