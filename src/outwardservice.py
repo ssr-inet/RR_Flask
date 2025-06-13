@@ -452,7 +452,7 @@ def filtering_Data(df_db, df_excel, service_name, tenant_data):
     # )Ends---------------------------------------------------------------------------------------
 
     tenant_data["CATEGORY"] = "TENANT_DB_INTI - NOT_IN_IHUB"
-
+    print(not_in_vendor)
     # Combining all Scenarios
     combined = [
         not_in_vendor,
@@ -497,7 +497,7 @@ def filtering_Data(df_db, df_excel, service_name, tenant_data):
     else:
         combined = pd.concat(non_empty_dfs, ignore_index=True)
         logger.info("Filteration Ends")
-
+    
         # Mapping all Scenarios with keys as Dictionary to retrun as result
         mapping = {
             "not_in_vendor": not_in_vendor,
